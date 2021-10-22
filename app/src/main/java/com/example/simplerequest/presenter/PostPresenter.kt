@@ -1,5 +1,7 @@
 package com.example.simplerequest.presenter
 
+import com.arellomobile.mvp.InjectViewState
+import com.arellomobile.mvp.MvpPresenter
 import com.example.simplerequest.model.Post
 import com.example.simplerequest.service.RetrofitClient
 import com.example.simplerequest.view.PostView
@@ -8,9 +10,8 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class PostPresenter(
-    private val postView: PostView
-) {
+@InjectViewState
+class PostPresenter: MvpPresenter<PostView>() {
 
     fun requestPosts() {
 
@@ -19,14 +20,14 @@ class PostPresenter(
             override fun onResponse(call: Call<List<Post>>, response: Response<List<Post>>) {
                 val posts = response.body()
                 if (posts.isEmpty()) {
-                    postView.showEmptyMessage()
+                    viewState.showEmptyMessage()
                 } else {
-                    postView.showPosts(posts)
+                    viewState.showPosts(posts)
                 }
             }
 
             override fun onFailure(call: Call<List<Post>>, t: Throwable?) {
-                postView.showErrorMessage()
+                viewState.showErrorMessage()
             }
         })
     }
