@@ -1,36 +1,40 @@
-package com.example.simplerequest.view
+package com.example.simplerequest.mvp.view
 
 import android.os.Bundle
 import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arellomobile.mvp.presenter.InjectPresenter
-import com.example.simplerequest.presenter.PostPresenter
-import com.example.simplerequest.R
-import com.example.simplerequest.databinding.ActivityMainBinding
-import com.example.simplerequest.model.Post
+import com.example.simplerequest.databinding.FragmentMvpBinding
+import com.example.simplerequest.main.model.Post
+import com.example.simplerequest.mvp.presenter.PostPresenter
+import com.example.simplerequest.main.view.PostItemAdapter
 
-class MainActivity : MvpAppCompatActivity(), PostView {
+class MvpFragment : MvpAppCompatFragment(), PostView {
 
     companion object {
-        private const val TAG = "MainActivity"
+        private const val TAG = "MvpFragment"
     }
 
-    private lateinit var binding: ActivityMainBinding
+    private lateinit var binding: FragmentMvpBinding
     @InjectPresenter
     lateinit var presenter: PostPresenter
     private var adapter: PostItemAdapter = PostItemAdapter(listOf())
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentMvpBinding.inflate(inflater,container,false)
+        return binding.root
+    }
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         binding.apply {
-
-            recycler.layoutManager = LinearLayoutManager(applicationContext)
+            recycler.layoutManager = LinearLayoutManager(context)
             recycler.adapter = adapter
 
             button.setOnClickListener {

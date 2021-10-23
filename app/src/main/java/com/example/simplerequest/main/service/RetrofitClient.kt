@@ -1,4 +1,4 @@
-package com.example.simplerequest.service
+package com.example.simplerequest.main.service
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

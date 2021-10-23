@@ -1,4 +1,4 @@
-package com.example.simplerequest.model
+package com.example.simplerequest.main.model
 
 data class Post(
     val userId: Int,

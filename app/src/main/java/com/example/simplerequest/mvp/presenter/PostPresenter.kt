@@ -1,11 +1,10 @@
-package com.example.simplerequest.presenter
+package com.example.simplerequest.mvp.presenter
 
 import com.arellomobile.mvp.InjectViewState
 import com.arellomobile.mvp.MvpPresenter
-import com.example.simplerequest.model.Post
-import com.example.simplerequest.service.RetrofitClient
-import com.example.simplerequest.view.PostView
-import kotlinx.coroutines.Job
+import com.example.simplerequest.main.model.Post
+import com.example.simplerequest.main.service.RetrofitClient
+import com.example.simplerequest.mvp.view.PostView
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

@@ -1,10 +1,10 @@
-package com.example.simplerequest.view
+package com.example.simplerequest.main.view
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.simplerequest.databinding.PostItemBinding
-import com.example.simplerequest.model.Post
+import com.example.simplerequest.main.model.Post
 
 class PostItemAdapter(
     private var posts: List<Post>
