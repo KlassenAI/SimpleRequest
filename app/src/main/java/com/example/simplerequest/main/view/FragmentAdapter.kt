@@ -5,7 +5,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.simplerequest.mvp.view.MvpFragment
-import com.example.simplerequest.view.MviFragment
 import com.example.simplerequest.mvvm.view.MvvmFragment
 
 class FragmentAdapter(
