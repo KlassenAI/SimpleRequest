@@ -37,6 +37,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="Body" />
+
+        <ImageView
+            android:id="@+id/post_item_image"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginTop="4dp" />
+
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

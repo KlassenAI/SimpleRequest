@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.service.RetrofitClient
+import com.example.simplerequest.main.service.RetrofitClient.service
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ class MviViewModel: ViewModel() {
             postIntent.consumeAsFlow().collect {
                 when(it) {
                     PostIntent.LoadPostsClick -> requestPosts()
+                    is PostIntent.SearchPost -> searchPost(it.id)
                 }
             }
         }
@@ -41,10 +43,10 @@ class MviViewModel: ViewModel() {
 
         _state.value = PostState.Loading
 
-        RetrofitClient.create().requestPosts().enqueue(object : Callback<List<Post>> {
+        service.requestPosts().enqueue(object : Callback<List<Post>?> {
 
-            override fun onResponse(call: Call<List<Post>>, response: Response<List<Post>>) {
-                val posts = response.body()
+            override fun onResponse(call: Call<List<Post>?>, response: Response<List<Post>?>) {
+                val posts = response.body()!!
                 if (posts.isEmpty()) {
                     _state.value = PostState.Empty
                 } else {
@@ -52,7 +54,27 @@ class MviViewModel: ViewModel() {
                 }
             }
 
-            override fun onFailure(call: Call<List<Post>>, t: Throwable?) {
+            override fun onFailure(call: Call<List<Post>?>, t: Throwable?) {
+                _state.value = PostState.Error(t?.message.toString())
+            }
+        })
+    }
+
+    private fun searchPost(id: String) {
+
+        _state.value = PostState.Loading
+
+        service.searchPost(id).enqueue(object : Callback<Post?> {
+            override fun onResponse(call: Call<Post?>, response: Response<Post?>) {
+                val post = response.body()
+                if (post == null || post.id.toString() == "") {
+                    _state.value = PostState.Empty
+                } else {
+                    _state.value = PostState.Loaded(listOf(post))
+                }
+            }
+
+            override fun onFailure(call: Call<Post?>, t: Throwable?) {
                 _state.value = PostState.Error(t?.message.toString())
             }
         })

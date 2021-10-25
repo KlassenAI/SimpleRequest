@@ -1,8 +1,12 @@
 package com.example.simplerequest.main.view
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
+import com.bumptech.glide.Glide
 import com.example.simplerequest.databinding.PostItemBinding
 import com.example.simplerequest.main.model.Post
 
@@ -20,6 +24,7 @@ class PostItemAdapter(
                 postItemId.text = post.id.toString()
                 postItemTitle.text = post.title
                 postItemBody.text = post.body
+                postItemImage.loadImage(post.id)
             }
         }
     }
@@ -41,4 +46,18 @@ class PostItemAdapter(
         posts = list
         notifyDataSetChanged()
     }
+
+    private fun ImageView.loadImage(id: Int) {
+        Glide.with(context)
+            .load("https://picsum.photos/id/$id/640/480")
+            .placeholder(getPlaceholder(context))
+            .into(this)
+    }
+
+    private fun getPlaceholder(context: Context) =
+        CircularProgressDrawable(context).apply {
+            strokeWidth = 5f
+            centerRadius = 30f
+            start()
+        }
 }
