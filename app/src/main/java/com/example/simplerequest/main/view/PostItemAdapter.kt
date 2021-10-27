@@ -1,8 +1,12 @@
 package com.example.simplerequest.main.view
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
@@ -11,8 +15,13 @@ import com.example.simplerequest.databinding.PostItemBinding
 import com.example.simplerequest.main.model.Post
 
 class PostItemAdapter(
-    private var posts: List<Post>
-) : RecyclerView.Adapter<PostItemAdapter.PostViewHolder>() {
+    listPosts: ArrayList<Post>,
+    private val listener: OnPostClickListener
+) : RecyclerView.Adapter<PostItemAdapter.PostViewHolder>(), Filterable {
+
+    private var posts = ArrayList(listPosts)
+    private var allPosts = ArrayList(listPosts)
+    private var filterString = ""
 
     inner class PostViewHolder(
         private val binding: PostItemBinding
@@ -24,7 +33,9 @@ class PostItemAdapter(
                 postItemId.text = post.id.toString()
                 postItemTitle.text = post.title
                 postItemBody.text = post.body
-                postItemImage.loadImage(post.id)
+                postItemCard.setOnClickListener {
+                    listener.onPostClick(post)
+                }
             }
         }
     }
@@ -42,22 +53,58 @@ class PostItemAdapter(
 
     override fun getItemCount(): Int = posts.size
 
-    fun setList(list: List<Post>) {
-        posts = list
+    fun setList(list: ArrayList<Post>) {
+        Log.d("setList", list.size.toString())
+        posts = ArrayList(list)
+        Log.d("setList", posts.size.toString())
+        allPosts = ArrayList(list)
+        Log.d("setList", allPosts.size.toString())
         notifyDataSetChanged()
     }
 
-    private fun ImageView.loadImage(id: Int) {
-        Glide.with(context)
-            .load("https://picsum.photos/id/$id/640/480")
-            .placeholder(getPlaceholder(context))
-            .into(this)
+    override fun getFilter(): Filter {
+        return exampleFilter
     }
 
-    private fun getPlaceholder(context: Context) =
-        CircularProgressDrawable(context).apply {
-            strokeWidth = 5f
-            centerRadius = 30f
-            start()
+    private val exampleFilter: Filter = object : Filter() {
+
+        override fun performFiltering(charSequence: CharSequence): FilterResults {
+
+            filterString = charSequence.toString()
+
+            val filteredList = getFilterPosts(filterString)
+
+            val results = FilterResults()
+            results.values = filteredList
+            return results
         }
+
+        override fun publishResults(constraint: CharSequence, results: FilterResults) {
+            val resultPosts = results.values as ArrayList<Post>
+            posts = if (resultPosts.isEmpty()) {
+                getFilterPosts(filterString)
+            } else {
+                resultPosts
+            }
+
+            Log.d("posts", posts.size.toString())
+            Log.d("allPosts", allPosts.size.toString())
+            Log.d("filter", filterString)
+            notifyDataSetChanged()
+        }
+    }
+
+    private fun getFilterPosts(filter: String): ArrayList<Post> {
+        val filteredList = ArrayList<Post>()
+        if (filter.isEmpty()) {
+            filteredList.addAll(allPosts)
+        } else {
+            for (item in allPosts) {
+                if (item.title.contains(filter) || item.body.contains(filter)) {
+                    filteredList.add(item)
+                }
+            }
+        }
+        return filteredList
+    }
 }

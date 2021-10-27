@@ -4,7 +4,8 @@ import com.arellomobile.mvp.MvpView
 import com.example.simplerequest.main.model.Post
 
 interface PostView : MvpView {
-    fun showPosts(posts: List<Post>)
+    fun showPosts(posts: ArrayList<Post>)
     fun showEmptyMessage()
     fun showErrorMessage()
+    fun showKeyboard(isShown: Boolean)
 }

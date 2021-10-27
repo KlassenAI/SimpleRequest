@@ -11,37 +11,18 @@ import retrofit2.Response
 
 class PostViewModel : ViewModel() {
 
-    private val _posts = MutableLiveData<List<Post>?>()
-    val posts: LiveData<List<Post>?> = _posts
+    private val _posts = MutableLiveData<ArrayList<Post>?>()
+    val posts: LiveData<ArrayList<Post>?> = _posts
 
     fun requestPosts() {
 
-        service.requestPosts().enqueue(object : Callback<List<Post>?> {
+        service.requestPosts().enqueue(object : Callback<ArrayList<Post>?> {
 
-            override fun onResponse(call: Call<List<Post>?>, response: Response<List<Post>?>) {
+            override fun onResponse(call: Call<ArrayList<Post>?>, response: Response<ArrayList<Post>?>) {
                 _posts.postValue(response.body())
             }
 
-            override fun onFailure(call: Call<List<Post>?>, t: Throwable?) {
-                _posts.postValue(null)
-            }
-        })
-    }
-
-    fun searchPost(id: String) {
-
-        service.searchPost(id).enqueue(object : Callback<Post?> {
-            override fun onResponse(call: Call<Post?>, response: Response<Post?>) {
-                val post = response.body()
-                _posts.postValue(listOf(response.body()!!))
-                if (post == null || post.id.toString() == "") {
-                    _posts.postValue(listOf())
-                } else {
-                    _posts.postValue(listOf(post))
-                }
-            }
-
-            override fun onFailure(call: Call<Post?>, t: Throwable?) {
+            override fun onFailure(call: Call<ArrayList<Post>?>, t: Throwable?) {
                 _posts.postValue(null)
             }
         })

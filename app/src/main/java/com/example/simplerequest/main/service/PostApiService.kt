@@ -9,8 +9,5 @@ import retrofit2.http.Path
 interface PostApiService {
 
     @GET("posts")
-    fun requestPosts(): Call<List<Post>?>
-
-    @GET("posts/{id}")
-    fun searchPost(@Path("id") id: String): Call<Post?>
+    fun requestPosts(): Call<ArrayList<Post>?>
 }

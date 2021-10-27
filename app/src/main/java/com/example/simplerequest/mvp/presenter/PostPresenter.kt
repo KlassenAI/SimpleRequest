@@ -2,6 +2,7 @@ package com.example.simplerequest.mvp.presenter
 
 import com.arellomobile.mvp.InjectViewState
 import com.arellomobile.mvp.MvpPresenter
+import com.arellomobile.mvp.presenter.ProvidePresenter
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.service.RetrofitClient
 import com.example.simplerequest.main.service.RetrofitClient.service
@@ -13,38 +14,24 @@ import retrofit2.Response
 @InjectViewState
 class PostPresenter: MvpPresenter<PostView>() {
 
-    fun requestPosts() {
-
-        service.requestPosts().enqueue(object : Callback<List<Post>?> {
-
-            override fun onResponse(call: Call<List<Post>?>, response: Response<List<Post>?>) {
-                val posts = response.body()!!
-                if (posts.isEmpty()) {
-                    viewState.showEmptyMessage()
-                } else {
-                    viewState.showPosts(posts)
-                }
-            }
-
-            override fun onFailure(call: Call<List<Post>?>, t: Throwable?) {
-                viewState.showErrorMessage()
-            }
-        })
+    private fun showKeyboard(isShown: Boolean) {
+        viewState.showKeyboard(isShown)
     }
 
-    fun searchPost(id: String) {
+    fun requestPosts() {
 
-        service.searchPost(id).enqueue(object : Callback<Post?> {
-            override fun onResponse(call: Call<Post?>, response: Response<Post?>) {
-                val post = response.body()
-                if (post == null || post.id.toString() == "") {
-                    viewState.showEmptyMessage()
+        service.requestPosts().enqueue(object : Callback<ArrayList<Post>?> {
+
+            override fun onResponse(call: Call<ArrayList<Post>?>, response: Response<ArrayList<Post>?>) {
+                val posts = response.body()!!
+                if (posts.isNotEmpty()) {
+                    viewState.showPosts(posts)
                 } else {
-                    viewState.showPosts(listOf(post))
+                    viewState.showEmptyMessage()
                 }
             }
 
-            override fun onFailure(call: Call<Post?>, t: Throwable?) {
+            override fun onFailure(call: Call<ArrayList<Post>?>, t: Throwable?) {
                 viewState.showErrorMessage()
             }
         })

@@ -33,7 +33,6 @@ class MviViewModel: ViewModel() {
             postIntent.consumeAsFlow().collect {
                 when(it) {
                     PostIntent.LoadPostsClick -> requestPosts()
-                    is PostIntent.SearchPost -> searchPost(it.id)
                 }
             }
         }
@@ -43,9 +42,9 @@ class MviViewModel: ViewModel() {
 
         _state.value = PostState.Loading
 
-        service.requestPosts().enqueue(object : Callback<List<Post>?> {
+        service.requestPosts().enqueue(object : Callback<ArrayList<Post>?> {
 
-            override fun onResponse(call: Call<List<Post>?>, response: Response<List<Post>?>) {
+            override fun onResponse(call: Call<ArrayList<Post>?>, response: Response<ArrayList<Post>?>) {
                 val posts = response.body()!!
                 if (posts.isEmpty()) {
                     _state.value = PostState.Empty
@@ -54,27 +53,7 @@ class MviViewModel: ViewModel() {
                 }
             }
 
-            override fun onFailure(call: Call<List<Post>?>, t: Throwable?) {
-                _state.value = PostState.Error(t?.message.toString())
-            }
-        })
-    }
-
-    private fun searchPost(id: String) {
-
-        _state.value = PostState.Loading
-
-        service.searchPost(id).enqueue(object : Callback<Post?> {
-            override fun onResponse(call: Call<Post?>, response: Response<Post?>) {
-                val post = response.body()
-                if (post == null || post.id.toString() == "") {
-                    _state.value = PostState.Empty
-                } else {
-                    _state.value = PostState.Loaded(listOf(post))
-                }
-            }
-
-            override fun onFailure(call: Call<Post?>, t: Throwable?) {
+            override fun onFailure(call: Call<ArrayList<Post>?>, t: Throwable?) {
                 _state.value = PostState.Error(t?.message.toString())
             }
         })

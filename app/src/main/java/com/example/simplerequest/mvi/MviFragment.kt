@@ -1,6 +1,5 @@
 package com.example.simplerequest.mvi
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -13,15 +12,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.simplerequest.databinding.FragmentMviBinding
-import com.example.simplerequest.main.view.IFragmentListener
-import com.example.simplerequest.main.view.ISearch
+import com.example.simplerequest.main.model.Post
+import com.example.simplerequest.main.view.OnPostClickListener
 import com.example.simplerequest.main.view.PostItemAdapter
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 @ExperimentalCoroutinesApi
-class MviFragment : Fragment(), ISearch {
+class MviFragment : Fragment(), OnPostClickListener {
 
     companion object {
         private val TAG = MviFragment::class.java.simpleName
@@ -29,8 +28,7 @@ class MviFragment : Fragment(), ISearch {
 
     private lateinit var binding: FragmentMviBinding
     private lateinit var viewModel: MviViewModel
-    private var adapter = PostItemAdapter(listOf())
-    private var mIFragmentListener: IFragmentListener? = null
+    private var adapter = PostItemAdapter(arrayListOf(), this)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -43,8 +41,6 @@ class MviFragment : Fragment(), ISearch {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel = ViewModelProvider(requireActivity()).get(MviViewModel::class.java)
-
-        adapter = PostItemAdapter(listOf())
 
         observeViewModel()
 
@@ -81,7 +77,7 @@ class MviFragment : Fragment(), ISearch {
                     }
                     is PostState.Loaded -> {
                         log("Loaded")
-                        adapter.setList(it.posts)
+                        adapter.setList(it.posts as ArrayList<Post>)
                         binding.progressCircular.isVisible = false
                     }
                 }
@@ -93,24 +89,11 @@ class MviFragment : Fragment(), ISearch {
         Toast.makeText(context, text, length).show()
     }
 
-    override fun onTextQuery(text: String) {
-        lifecycleScope.launch {
-            viewModel.postIntent.send(PostIntent.SearchPost(text))
-        }
-    }
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        mIFragmentListener = context as IFragmentListener
-        mIFragmentListener?.addiSearch(this)
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        mIFragmentListener?.removeISearch(this)
-    }
-
     private fun log(text: String) {
         Log.d(TAG, text)
+    }
+
+    override fun onPostClick(post: Post) {
+        TODO("Not yet implemented")
     }
 }
