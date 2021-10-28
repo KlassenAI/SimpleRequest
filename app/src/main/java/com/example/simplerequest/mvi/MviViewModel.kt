@@ -2,8 +2,8 @@ package com.example.simplerequest.mvi
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.simplerequest.main.extensions.Extensions.Companion.log
 import com.example.simplerequest.main.model.Post
-import com.example.simplerequest.main.service.RetrofitClient
 import com.example.simplerequest.main.service.RetrofitClient.service
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -19,42 +19,56 @@ import retrofit2.Response
 @ExperimentalCoroutinesApi
 class MviViewModel: ViewModel() {
 
-    val postIntent = Channel<PostIntent>(Channel.UNLIMITED)
-    private val _state = MutableStateFlow<PostState>(PostState.Start)
-    val state: StateFlow<PostState>
-        get() = _state
+    val intentChannel = Channel<PostIntent>(Channel.UNLIMITED)
+    private val _listState = MutableStateFlow<PostListState>(PostListState.Start)
+    val listState: StateFlow<PostListState> = _listState
+    private val _postState = MutableStateFlow<SelectPostState>(SelectPostState.Empty)
+    val postState: StateFlow<SelectPostState> = _postState
 
-    init {
-        handleIntent()
+    // новая версия
+    fun onIntent(postIntent: PostIntent) {
+        when(postIntent) {
+            PostIntent.LoadPostsClick -> requestPosts()
+            is PostIntent.SelectPost -> saveSelectPost(postIntent.post)
+        }
     }
 
+    /*
+    // старая версия
     private fun handleIntent() {
         viewModelScope.launch {
-            postIntent.consumeAsFlow().collect {
+            intentChannel.consumeAsFlow().collect {
                 when(it) {
+                    is PostIntent.SelectPost -> saveSelectPost(it.post)
                     PostIntent.LoadPostsClick -> requestPosts()
                 }
             }
         }
     }
 
+     */
+
+    private fun saveSelectPost(post: Post) {
+        _postState.value = SelectPostState.Success(post)
+    }
+
     private fun requestPosts() {
 
-        _state.value = PostState.Loading
+        _listState.value = PostListState.Loading
 
         service.requestPosts().enqueue(object : Callback<ArrayList<Post>?> {
 
             override fun onResponse(call: Call<ArrayList<Post>?>, response: Response<ArrayList<Post>?>) {
                 val posts = response.body()!!
                 if (posts.isEmpty()) {
-                    _state.value = PostState.Empty
+                    _listState.value = PostListState.Empty
                 } else {
-                    _state.value = PostState.Loaded(posts)
+                    _listState.value = PostListState.Success(posts)
                 }
             }
 
             override fun onFailure(call: Call<ArrayList<Post>?>, t: Throwable?) {
-                _state.value = PostState.Error(t?.message.toString())
+                _listState.value = PostListState.Error(t?.message.toString())
             }
         })
     }

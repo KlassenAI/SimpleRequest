@@ -13,6 +13,8 @@ class PostViewModel : ViewModel() {
 
     private val _posts = MutableLiveData<ArrayList<Post>?>()
     val posts: LiveData<ArrayList<Post>?> = _posts
+    private val _selectedPost = MutableLiveData<Post?>()
+    val selectedPost: LiveData<Post?> = _selectedPost
 
     fun requestPosts() {
 
@@ -26,5 +28,9 @@ class PostViewModel : ViewModel() {
                 _posts.postValue(null)
             }
         })
+    }
+
+    fun saveSelectedPost(post: Post) {
+        _selectedPost.postValue(post)
     }
 }

@@ -14,7 +14,6 @@
         android:theme="@style/Theme.SimpleRequest">
         <activity
             android:name=".main.view.MainActivity"
-            android:windowSoftInputMode="stateAlwaysVisible"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

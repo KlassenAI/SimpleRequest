@@ -14,8 +14,8 @@ import retrofit2.Response
 @InjectViewState
 class PostPresenter: MvpPresenter<PostView>() {
 
-    private fun showKeyboard(isShown: Boolean) {
-        viewState.showKeyboard(isShown)
+    fun saveSelectedPost(post: Post) {
+        viewState.showSelectedPost(post)
     }
 
     fun requestPosts() {
