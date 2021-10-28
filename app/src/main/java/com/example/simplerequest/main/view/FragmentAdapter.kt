@@ -4,10 +4,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.example.simplerequest.mvi.MviFragment
+import com.example.simplerequest.mvi.view.MviFragment
 import com.example.simplerequest.mvp.view.MvpFragment
 import com.example.simplerequest.mvvm.view.MvvmFragment
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 class FragmentAdapter(
     fragmentManager: FragmentManager,

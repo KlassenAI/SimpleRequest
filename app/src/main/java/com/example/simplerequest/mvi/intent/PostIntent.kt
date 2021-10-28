@@ -1,4 +1,4 @@
-package com.example.simplerequest.mvi
+package com.example.simplerequest.mvi.intent
 
 import com.example.simplerequest.main.model.Post
 

@@ -1,4 +1,4 @@
-package com.example.simplerequest.mvi
+package com.example.simplerequest.mvi.view
 
 import android.os.Bundle
 import android.text.Editable
@@ -11,15 +11,17 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.simplerequest.R
 import com.example.simplerequest.databinding.FragmentMviBinding
 import com.example.simplerequest.main.extensions.Extensions.Companion.loadImage
 import com.example.simplerequest.main.extensions.Extensions.Companion.log
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.view.OnPostClickListener
 import com.example.simplerequest.main.view.PostItemAdapter
-import com.example.simplerequest.mvi.PostIntent.LoadPostsClick
-import com.example.simplerequest.mvi.PostIntent.SelectPost
+import com.example.simplerequest.mvi.viewmodel.MviViewModel
+import com.example.simplerequest.mvi.intent.PostIntent.LoadPostsClick
+import com.example.simplerequest.mvi.intent.PostIntent.SelectPost
+import com.example.simplerequest.mvi.viewstate.PostListState
+import com.example.simplerequest.mvi.viewstate.SelectPostState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
