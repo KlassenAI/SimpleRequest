@@ -14,12 +14,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.simplerequest.databinding.FragmentMviBinding
 import com.example.simplerequest.main.extensions.Extensions.Companion.loadImage
 import com.example.simplerequest.main.extensions.Extensions.Companion.log
+import com.example.simplerequest.main.extensions.Extensions.Companion.showKeyboard
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.view.OnPostClickListener
 import com.example.simplerequest.main.view.PostItemAdapter
 import com.example.simplerequest.mvi.viewmodel.MviViewModel
 import com.example.simplerequest.mvi.intent.PostIntent.LoadPostsClick
 import com.example.simplerequest.mvi.intent.PostIntent.SelectPost
+import com.example.simplerequest.mvi.viewstate.KeyboardState
 import com.example.simplerequest.mvi.viewstate.PostListState
 import com.example.simplerequest.mvi.viewstate.SelectPostState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,6 +53,7 @@ class MviFragment : Fragment(), OnPostClickListener {
 
         observeListState()
         observePostState()
+        observeKeyboardState()
 
         binding.apply {
             recycler.layoutManager = LinearLayoutManager(context)
@@ -121,6 +124,17 @@ class MviFragment : Fragment(), OnPostClickListener {
                             image.loadImage(it.post.id)
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private fun observeKeyboardState() {
+        lifecycleScope.launch {
+            viewModel.keyboardState.collect {
+                when(it) {
+                    KeyboardState.isHidden -> {}
+                    KeyboardState.isShown -> showKeyboard(binding.filterEditText, requireActivity())
                 }
             }
         }

@@ -15,6 +15,8 @@ class PostViewModel : ViewModel() {
     val posts: LiveData<ArrayList<Post>?> = _posts
     private val _selectedPost = MutableLiveData<Post?>()
     val selectedPost: LiveData<Post?> = _selectedPost
+    private val _keyboardState = MutableLiveData<Boolean?>()
+    val keyboardState: LiveData<Boolean?> = _keyboardState
 
     fun requestPosts() {
 
@@ -32,5 +34,9 @@ class PostViewModel : ViewModel() {
 
     fun saveSelectedPost(post: Post) {
         _selectedPost.postValue(post)
+    }
+
+    fun saveKeyboardState(focused: Boolean) {
+        _keyboardState.postValue(focused)
     }
 }

@@ -1,7 +1,12 @@
 package com.example.simplerequest.main.extensions
 
+import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -37,6 +42,15 @@ class Extensions {
 
         fun log(text: String, tag: String = TAG) {
             Log.d(TAG, text)
+        }
+
+        fun showKeyboard(editText: EditText, activity: Activity) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                editText.requestFocus()
+                val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(editText, InputMethodManager.RESULT_UNCHANGED_SHOWN)
+                editText.setSelection(editText.text.length)
+            }, 1)
         }
     }
 }

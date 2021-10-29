@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.simplerequest.databinding.FragmentMvvmBinding
 import com.example.simplerequest.main.extensions.Extensions.Companion.loadImage
+import com.example.simplerequest.main.extensions.Extensions.Companion.showKeyboard
 import com.example.simplerequest.main.extensions.Extensions.Companion.toast
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.view.OnPostClickListener
@@ -71,6 +72,10 @@ class MvvmFragment : Fragment(), OnPostClickListener {
                 image.loadImage(it?.id)
             })
 
+            viewModel.keyboardState.observe(viewLifecycleOwner, {
+                showKeyboard(filterEditText, requireActivity())
+            })
+
             filterEditText.addTextChangedListener(object : TextWatcher {
 
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -91,5 +96,10 @@ class MvvmFragment : Fragment(), OnPostClickListener {
 
     private fun filterPosts(filter: String) {
         adapter.filter.filter(filter)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        viewModel.saveKeyboardState(binding.filterEditText.isFocused)
     }
 }

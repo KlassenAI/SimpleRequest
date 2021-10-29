@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.service.RetrofitClient.service
 import com.example.simplerequest.mvi.intent.PostIntent
+import com.example.simplerequest.mvi.viewstate.KeyboardState
 import com.example.simplerequest.mvi.viewstate.PostListState
 import com.example.simplerequest.mvi.viewstate.SelectPostState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,12 +23,15 @@ class MviViewModel: ViewModel() {
     val listState: StateFlow<PostListState> = _listState
     private val _postState = MutableStateFlow<SelectPostState>(SelectPostState.Empty)
     val postState: StateFlow<SelectPostState> = _postState
+    private val _keyboardState = MutableStateFlow<KeyboardState>(KeyboardState.isHidden)
+    val keyboardState: StateFlow<KeyboardState> = _keyboardState
 
     // новая версия
     fun onIntent(postIntent: PostIntent) {
         when(postIntent) {
             PostIntent.LoadPostsClick -> requestPosts()
             is PostIntent.SelectPost -> saveSelectPost(postIntent.post)
+            is PostIntent.SaveKeyboardState -> saveKeyboardState(postIntent.focused)
         }
     }
 
@@ -43,8 +47,11 @@ class MviViewModel: ViewModel() {
             }
         }
     }
-
      */
+
+    private fun saveKeyboardState(focused: Boolean) {
+        _keyboardState.value = if (focused) KeyboardState.isShown else KeyboardState.isHidden
+    }
 
     private fun saveSelectPost(post: Post) {
         _postState.value = SelectPostState.Success(post)
