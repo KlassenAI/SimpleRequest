@@ -134,7 +134,7 @@ class MviFragment : Fragment(), OnPostClickListener {
             viewModel.keyboardState.collect {
                 when(it) {
                     KeyboardState.isHidden -> {}
-                    KeyboardState.isShown -> showKeyboard(binding.filterEditText, requireActivity())
+                    //KeyboardState.isShown -> showKeyboard(binding.filterEditText, requireActivity())
                 }
             }
         }

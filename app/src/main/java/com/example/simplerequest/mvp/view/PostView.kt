@@ -8,5 +8,4 @@ interface PostView : MvpView {
     fun showEmptyMessage()
     fun showErrorMessage()
     fun showSelectedPost(post: Post)
-    fun showKeyboard()
 }

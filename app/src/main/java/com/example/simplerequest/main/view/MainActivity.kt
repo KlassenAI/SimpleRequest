@@ -5,7 +5,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.example.simplerequest.databinding.ActivityMainBinding
 import com.google.android.material.tabs.TabLayout
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
+@ExperimentalCoroutinesApi
 class MainActivity : AppCompatActivity() {
 
     companion object {

@@ -5,9 +5,9 @@
       <map>
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.10377358490566038" />
         <entry key="app/src/main/res/layout/fragment_mvi.xml" value="0.22" />
-        <entry key="app/src/main/res/layout/fragment_mvp.xml" value="0.22" />
+        <entry key="app/src/main/res/layout/fragment_mvp.xml" value="0.25" />
         <entry key="app/src/main/res/layout/fragment_mvvm.xml" value="0.1" />
-        <entry key="app/src/main/res/layout/post_item.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/post_item.xml" value="0.33" />
         <entry key="app/src/main/res/menu/search_menu.xml" value="0.23697916666666666" />
       </map>
     </option>

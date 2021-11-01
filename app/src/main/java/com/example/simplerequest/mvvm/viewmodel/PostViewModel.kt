@@ -1,8 +1,8 @@
 package com.example.simplerequest.mvvm.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
+import com.example.simplerequest.main.extensions.Extensions.Companion.filterPosts
+import com.example.simplerequest.main.extensions.Extensions.Companion.log
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.service.RetrofitClient.service
 import retrofit2.Call
@@ -15,14 +15,26 @@ class PostViewModel : ViewModel() {
     val posts: LiveData<ArrayList<Post>?> = _posts
     private val _selectedPost = MutableLiveData<Post?>()
     val selectedPost: LiveData<Post?> = _selectedPost
-    private val _keyboardState = MutableLiveData<Boolean?>()
-    val keyboardState: LiveData<Boolean?> = _keyboardState
+    private val _isSearching = MutableLiveData(false)
+    val isSearching: LiveData<Boolean> = _isSearching
+    private val _filter = MutableLiveData("")
+    val filter: LiveData<String> = _filter
+    val filteredPosts = MediatorLiveData<ArrayList<Post>>().apply {
+        addSource(posts) {
+            value = filterPosts(it, filter.value ?: "")
+        }
+        addSource(filter) {
+            value = filterPosts(posts.value, it)
+        }
+    }
 
     fun requestPosts() {
 
         service.requestPosts().enqueue(object : Callback<ArrayList<Post>?> {
 
-            override fun onResponse(call: Call<ArrayList<Post>?>, response: Response<ArrayList<Post>?>) {
+            override fun onResponse(
+                call: Call<ArrayList<Post>?>, response: Response<ArrayList<Post>?>
+            ) {
                 _posts.postValue(response.body())
             }
 
@@ -32,11 +44,15 @@ class PostViewModel : ViewModel() {
         })
     }
 
-    fun saveSelectedPost(post: Post) {
+    fun setSelectedPost(post: Post) {
         _selectedPost.postValue(post)
     }
 
-    fun saveKeyboardState(focused: Boolean) {
-        _keyboardState.postValue(focused)
+    fun setIsSearching(isSearching: Boolean) {
+        _isSearching.postValue(isSearching)
+    }
+
+    fun setFilter(filter: String) {
+        _filter.postValue(filter)
     }
 }

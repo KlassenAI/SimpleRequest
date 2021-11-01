@@ -1,6 +1,7 @@
 package com.example.simplerequest.mvi.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.service.RetrofitClient.service
 import com.example.simplerequest.mvi.intent.PostIntent
@@ -11,6 +12,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -18,7 +22,7 @@ import retrofit2.Response
 @ExperimentalCoroutinesApi
 class MviViewModel: ViewModel() {
 
-    val intentChannel = Channel<PostIntent>(Channel.UNLIMITED)
+    private val intentChannel = Channel<PostIntent>(Channel.UNLIMITED)
     private val _listState = MutableStateFlow<PostListState>(PostListState.Start)
     val listState: StateFlow<PostListState> = _listState
     private val _postState = MutableStateFlow<SelectPostState>(SelectPostState.Empty)
@@ -26,28 +30,27 @@ class MviViewModel: ViewModel() {
     private val _keyboardState = MutableStateFlow<KeyboardState>(KeyboardState.isHidden)
     val keyboardState: StateFlow<KeyboardState> = _keyboardState
 
-    // новая версия
+    init {
+        handleIntent()
+    }
+
     fun onIntent(postIntent: PostIntent) {
-        when(postIntent) {
-            PostIntent.LoadPostsClick -> requestPosts()
-            is PostIntent.SelectPost -> saveSelectPost(postIntent.post)
-            is PostIntent.SaveKeyboardState -> saveKeyboardState(postIntent.focused)
+        viewModelScope.launch {
+            intentChannel.send(postIntent)
         }
     }
 
-    /*
-    // старая версия
     private fun handleIntent() {
         viewModelScope.launch {
             intentChannel.consumeAsFlow().collect {
                 when(it) {
                     is PostIntent.SelectPost -> saveSelectPost(it.post)
                     PostIntent.LoadPostsClick -> requestPosts()
+                    is PostIntent.SaveKeyboardState -> saveKeyboardState(it.focused)
                 }
             }
         }
     }
-     */
 
     private fun saveKeyboardState(focused: Boolean) {
         _keyboardState.value = if (focused) KeyboardState.isShown else KeyboardState.isHidden

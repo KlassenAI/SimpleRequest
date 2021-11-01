@@ -1,25 +1,17 @@
 package com.example.simplerequest.mvp.view
 
-import android.content.Context
-import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
-import android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
-import android.view.inputmethod.InputMethodManager
-import android.view.inputmethod.InputMethodManager.RESULT_UNCHANGED_SHOWN
-import android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT
-import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
+import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arellomobile.mvp.presenter.InjectPresenter
+import com.example.simplerequest.R
 import com.example.simplerequest.databinding.FragmentMvpBinding
 import com.example.simplerequest.main.extensions.Extensions.Companion.loadImage
 import com.example.simplerequest.main.extensions.Extensions.Companion.log
@@ -27,16 +19,12 @@ import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.view.OnPostClickListener
 import com.example.simplerequest.main.view.PostItemAdapter
 import com.example.simplerequest.mvp.presenter.PostPresenter
-import androidx.core.content.ContextCompat.getSystemService
-import com.example.simplerequest.main.extensions.Extensions
+import com.example.simplerequest.main.extensions.Extensions.Companion.isKeyboardShown
 import com.example.simplerequest.main.extensions.Extensions.Companion.showKeyboard
-
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MvpFragment : MvpAppCompatFragment(), PostView, OnPostClickListener {
-
-    companion object {
-        private val TAG = MvpFragment::class.java.simpleName
-    }
 
     private lateinit var binding: FragmentMvpBinding
 
@@ -63,35 +51,52 @@ class MvpFragment : MvpAppCompatFragment(), PostView, OnPostClickListener {
                 presenter.requestPosts()
             }
 
+            filterEditText.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    filterEditText.clearFocus()
+                }
+                false
+            }
+
             filterEditText.addTextChangedListener(object : TextWatcher {
 
+                private var searchFor = ""
+
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    filterPosts(s.toString())
+                    val searchText = s.toString()
+                    if (searchText == searchFor) return
+                    searchFor = searchText
+                    lifecycleScope.launch {
+                        delay(300)
+                        if (searchText != searchFor)
+                            return@launch
+                        filterPosts(searchFor)
+                    }
                 }
 
-                override fun beforeTextChanged(s: CharSequence?, str: Int, cnt: Int, aft: Int) {}
-
-                override fun afterTextChanged(s: Editable?) {}
-
+                override fun beforeTextChanged(s: CharSequence?, str: Int, cnt: Int, aft: Int) = Unit
+                override fun afterTextChanged(s: Editable?) = Unit
             })
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        presenter.saveKeyboardState(binding.filterEditText.isFocused)
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        showKeyboard(presenter.isSearching)
     }
 
-    /*
-    private fun showKeyboardForEditText(editText: EditText) {
-        val input = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        input.showSoftInput(editText, 0)
-        editText.requestFocus()
+    private fun showKeyboard(isSearching: Boolean) {
+        activity?.showKeyboard(binding.filterEditText, isSearching)
     }
-     */
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val isShown = isKeyboardShown(activity?.findViewById(R.id.main_activity))
+        presenter.isSearching = isShown
+    }
 
     override fun showPosts(posts: ArrayList<Post>) {
-        log("Posts Size ${posts.size}")
+        log("success")
         adapter.setList(posts)
         filterPosts(binding.filterEditText.text.toString())
         binding.progressCircular.isVisible = false
@@ -115,17 +120,13 @@ class MvpFragment : MvpAppCompatFragment(), PostView, OnPostClickListener {
         binding.image.loadImage(post.id)
     }
 
-    override fun showKeyboard() {
-        showKeyboard(binding.filterEditText, requireActivity())
-    }
-
     override fun onPostClick(post: Post) {
         log(post.toString())
         presenter.saveSelectedPost(post)
+        binding.scrollView.smoothScrollTo(0, 0)
     }
 
     private fun filterPosts(filter: String) {
         adapter.filter.filter(filter)
     }
 }
-

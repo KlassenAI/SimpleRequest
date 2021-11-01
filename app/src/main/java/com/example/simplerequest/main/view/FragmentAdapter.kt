@@ -7,7 +7,9 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.simplerequest.mvi.view.MviFragment
 import com.example.simplerequest.mvp.view.MvpFragment
 import com.example.simplerequest.mvvm.view.MvvmFragment
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
+@ExperimentalCoroutinesApi
 class FragmentAdapter(
     fragmentManager: FragmentManager,
     lifecycle: Lifecycle

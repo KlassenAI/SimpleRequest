@@ -2,9 +2,7 @@ package com.example.simplerequest.mvp.presenter
 
 import com.arellomobile.mvp.InjectViewState
 import com.arellomobile.mvp.MvpPresenter
-import com.arellomobile.mvp.presenter.ProvidePresenter
 import com.example.simplerequest.main.model.Post
-import com.example.simplerequest.main.service.RetrofitClient
 import com.example.simplerequest.main.service.RetrofitClient.service
 import com.example.simplerequest.mvp.view.PostView
 import retrofit2.Call
@@ -14,11 +12,7 @@ import retrofit2.Response
 @InjectViewState
 class PostPresenter: MvpPresenter<PostView>() {
 
-    fun saveKeyboardState(isShown: Boolean) {
-        if (isShown) {
-            viewState.showKeyboard()
-        }
-    }
+    var isSearching = false
 
     fun saveSelectedPost(post: Post) {
         viewState.showSelectedPost(post)

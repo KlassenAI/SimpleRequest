@@ -1,16 +1,11 @@
 package com.example.simplerequest.main.view
 
-import android.content.Context
-import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
-import android.widget.ImageView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.CircularProgressDrawable
-import com.bumptech.glide.Glide
 import com.example.simplerequest.databinding.PostItemBinding
 import com.example.simplerequest.main.model.Post
 
@@ -53,13 +48,14 @@ class PostItemAdapter(
 
     override fun getItemCount(): Int = posts.size
 
-    fun setList(list: ArrayList<Post>) {
-        Log.d("setList", list.size.toString())
-        posts = ArrayList(list)
-        Log.d("setList", posts.size.toString())
-        allPosts = ArrayList(list)
-        Log.d("setList", allPosts.size.toString())
-        notifyDataSetChanged()
+    fun setList(posts: ArrayList<Post>) {
+        val diffCallback = PostsDiffCallback(this.posts, posts)
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
+        this.posts.clear()
+        this.posts.addAll(posts)
+        this.allPosts.clear()
+        this.allPosts.addAll(posts)
+        diffResult.dispatchUpdatesTo(this)
     }
 
     override fun getFilter(): Filter {
@@ -81,16 +77,16 @@ class PostItemAdapter(
 
         override fun publishResults(constraint: CharSequence, results: FilterResults) {
             val resultPosts = results.values as ArrayList<Post>
-            posts = if (resultPosts.isEmpty()) {
+            val posts = if (resultPosts.isEmpty()) {
                 getFilterPosts(filterString)
             } else {
                 resultPosts
             }
-
-            Log.d("posts", posts.size.toString())
-            Log.d("allPosts", allPosts.size.toString())
-            Log.d("filter", filterString)
-            notifyDataSetChanged()
+            val diffCallback = PostsDiffCallback(this@PostItemAdapter.posts, posts)
+            val diffResult = DiffUtil.calculateDiff(diffCallback)
+            this@PostItemAdapter.posts.clear()
+            this@PostItemAdapter.posts.addAll(posts)
+            diffResult.dispatchUpdatesTo(this@PostItemAdapter)
         }
     }
 

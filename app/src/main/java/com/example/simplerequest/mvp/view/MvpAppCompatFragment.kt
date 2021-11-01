@@ -1,12 +1,11 @@
 package com.example.simplerequest.mvp.view
 
 import com.arellomobile.mvp.MvpDelegate
-
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 
-
 open class MvpAppCompatFragment: Fragment() {
+
     private var mIsStateSaved = false
     private var mMvpDelegate: MvpDelegate<out MvpAppCompatFragment>? = null
 
@@ -59,8 +58,8 @@ open class MvpAppCompatFragment: Fragment() {
         }
 
         var anyParentIsRemoving = false
-        var parent: Fragment = requireParentFragment()
-        while (!anyParentIsRemoving && parent != null) {
+        var parent = requireParentFragment()
+        while (!anyParentIsRemoving) {
             anyParentIsRemoving = parent.isRemoving
             parent = parent.requireParentFragment()
         }
@@ -69,9 +68,6 @@ open class MvpAppCompatFragment: Fragment() {
         }
     }
 
-    /**
-     * @return The [MvpDelegate] being used by this Fragment.
-     */
     private fun getMvpDelegate(): MvpDelegate<*> {
         if (mMvpDelegate == null) {
             mMvpDelegate = MvpDelegate(this)

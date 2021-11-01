@@ -9,25 +9,27 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.simplerequest.R
 import com.example.simplerequest.databinding.FragmentMvvmBinding
+import com.example.simplerequest.main.extensions.Extensions
 import com.example.simplerequest.main.extensions.Extensions.Companion.loadImage
+import com.example.simplerequest.main.extensions.Extensions.Companion.log
 import com.example.simplerequest.main.extensions.Extensions.Companion.showKeyboard
 import com.example.simplerequest.main.extensions.Extensions.Companion.toast
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.view.OnPostClickListener
 import com.example.simplerequest.main.view.PostItemAdapter
 import com.example.simplerequest.mvvm.viewmodel.PostViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MvvmFragment : Fragment(), OnPostClickListener {
 
     private lateinit var binding: FragmentMvvmBinding
     private lateinit var viewModel: PostViewModel
     private var adapter = PostItemAdapter(arrayListOf(), this)
-
-    companion object {
-        private val TAG = MvvmFragment::class.java.simpleName
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -49,17 +51,23 @@ class MvvmFragment : Fragment(), OnPostClickListener {
                 viewModel.requestPosts()
             }
 
-            viewModel.posts.observe(viewLifecycleOwner, {
+            viewModel.selectedPost.observe(viewLifecycleOwner, {
+                title.text = it?.title
+                image.loadImage(it?.id)
+            })
+
+            viewModel.filteredPosts.observe(viewLifecycleOwner, {
                 when {
                     it == null -> {
-                        toast("Error")
+                        log("Error")
                         filterEditText.isEnabled = false
                     }
                     it.isEmpty() -> {
-                        toast("Empty")
+                        log("Empty")
                         filterEditText.isEnabled = false
                     }
                     else -> {
+                        log("Success")
                         adapter.setList(it)
                         filterEditText.isEnabled = true
                     }
@@ -67,19 +75,20 @@ class MvvmFragment : Fragment(), OnPostClickListener {
                 progressCircular.isVisible = false
             })
 
-            viewModel.selectedPost.observe(viewLifecycleOwner, {
-                title.text = it?.title
-                image.loadImage(it?.id)
-            })
-
-            viewModel.keyboardState.observe(viewLifecycleOwner, {
-                showKeyboard(filterEditText, requireActivity())
-            })
-
             filterEditText.addTextChangedListener(object : TextWatcher {
 
+                private var searchFor = ""
+
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    filterPosts(s.toString())
+                    val searchText = s.toString()
+                    if (searchText == searchFor) return
+                    searchFor = searchText
+                    lifecycleScope.launch {
+                        delay(500)
+                        if (searchText != searchFor)
+                            return@launch
+                        viewModel.setFilter(s.toString())
+                    }
                 }
 
                 override fun beforeTextChanged(s: CharSequence?, str: Int, cnt: Int, aft: Int) {}
@@ -91,15 +100,21 @@ class MvvmFragment : Fragment(), OnPostClickListener {
     }
 
     override fun onPostClick(post: Post) {
-        viewModel.saveSelectedPost(post)
+        viewModel.setSelectedPost(post)
     }
 
-    private fun filterPosts(filter: String) {
-        adapter.filter.filter(filter)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val isShown = Extensions.isKeyboardShown(activity?.findViewById(R.id.main_activity))
+        viewModel.setIsSearching(isShown)
     }
 
-    override fun onStop() {
-        super.onStop()
-        viewModel.saveKeyboardState(binding.filterEditText.isFocused)
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        showKeyboard(viewModel.isSearching.value!!)
+    }
+
+    private fun showKeyboard(isSearching: Boolean) {
+        activity?.showKeyboard(binding.filterEditText, isSearching)
     }
 }
