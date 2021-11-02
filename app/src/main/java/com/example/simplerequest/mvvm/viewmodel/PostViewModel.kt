@@ -5,9 +5,7 @@ import com.example.simplerequest.main.extensions.Extensions.Companion.filterPost
 import com.example.simplerequest.main.extensions.Extensions.Companion.log
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.service.RetrofitClient.service
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.launch
 
 class PostViewModel : ViewModel() {
 
@@ -18,7 +16,7 @@ class PostViewModel : ViewModel() {
     private val _isSearching = MutableLiveData(false)
     val isSearching: LiveData<Boolean> = _isSearching
     private val _filter = MutableLiveData("")
-    val filter: LiveData<String> = _filter
+    private val filter: LiveData<String> = _filter
     val filteredPosts = MediatorLiveData<ArrayList<Post>>().apply {
         addSource(posts) {
             value = filterPosts(it, filter.value ?: "")
@@ -28,24 +26,9 @@ class PostViewModel : ViewModel() {
         }
     }
 
-    fun requestPosts() {
-
-        service.requestPosts().enqueue(object : Callback<ArrayList<Post>?> {
-
-            override fun onResponse(
-                call: Call<ArrayList<Post>?>, response: Response<ArrayList<Post>?>
-            ) {
-                _posts.postValue(response.body())
-            }
-
-            override fun onFailure(call: Call<ArrayList<Post>?>, t: Throwable?) {
-                _posts.postValue(null)
-            }
-        })
-    }
-
     fun setSelectedPost(post: Post) {
         _selectedPost.postValue(post)
+        requestPost(post.id)
     }
 
     fun setIsSearching(isSearching: Boolean) {
@@ -54,5 +37,35 @@ class PostViewModel : ViewModel() {
 
     fun setFilter(filter: String) {
         _filter.postValue(filter)
+    }
+
+    fun requestPosts() {
+        viewModelScope.launch {
+            try {
+                val response = service.requestPosts()
+                if (response.isSuccessful) {
+                    _posts.postValue(response.body())
+                } else {
+                    _posts.postValue(null)
+                }
+            } catch (e: Exception) {
+                _posts.postValue(null)
+            }
+        }
+    }
+
+    private fun requestPost(id: Int) {
+        viewModelScope.launch {
+            try {
+                val response = service.requestPostAsync(id)
+                if (response.isSuccessful) {
+                    log("response post ${response.body()}")
+                } else {
+                    log("response post ${null}")
+                }
+            } catch (e: Exception) {
+                log("response post ${null}")
+            }
+        }
     }
 }

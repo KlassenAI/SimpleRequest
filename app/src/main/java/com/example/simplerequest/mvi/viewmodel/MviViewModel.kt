@@ -1,23 +1,20 @@
 package com.example.simplerequest.mvi.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
+import com.example.simplerequest.main.extensions.Extensions
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.service.RetrofitClient.service
 import com.example.simplerequest.mvi.intent.PostIntent
-import com.example.simplerequest.mvi.viewstate.KeyboardState
 import com.example.simplerequest.mvi.viewstate.PostListState
 import com.example.simplerequest.mvi.viewstate.SelectPostState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 @ExperimentalCoroutinesApi
 class MviViewModel: ViewModel() {
@@ -27,11 +24,22 @@ class MviViewModel: ViewModel() {
     val listState: StateFlow<PostListState> = _listState
     private val _postState = MutableStateFlow<SelectPostState>(SelectPostState.Empty)
     val postState: StateFlow<SelectPostState> = _postState
-    private val _keyboardState = MutableStateFlow<KeyboardState>(KeyboardState.isHidden)
-    val keyboardState: StateFlow<KeyboardState> = _keyboardState
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching
 
     init {
         handleIntent()
+    }
+
+    private fun handleIntent() {
+        viewModelScope.launch {
+            intentChannel.consumeAsFlow().collect {
+                when(it) {
+                    is PostIntent.SelectPost -> setSelectedPost(it.post)
+                    PostIntent.LoadPostsClick -> requestPosts()
+                }
+            }
+        }
     }
 
     fun onIntent(postIntent: PostIntent) {
@@ -40,44 +48,45 @@ class MviViewModel: ViewModel() {
         }
     }
 
-    private fun handleIntent() {
+    fun setIsSearching(isSearching: Boolean) {
+        _isSearching.value = isSearching
+    }
+
+    private fun setSelectedPost(post: Post) {
+        _postState.value = SelectPostState.Success(post)
+        requestPost(post.id)
+    }
+
+    private fun requestPost(id: Int) {
         viewModelScope.launch {
-            intentChannel.consumeAsFlow().collect {
-                when(it) {
-                    is PostIntent.SelectPost -> saveSelectPost(it.post)
-                    PostIntent.LoadPostsClick -> requestPosts()
-                    is PostIntent.SaveKeyboardState -> saveKeyboardState(it.focused)
+            try {
+                val deferredResponse = async { service.requestPostAsync(id) }
+                val response = deferredResponse.await()
+                if (response.isSuccessful) {
+                    Extensions.log("response post ${response.body()}")
+                } else {
+                    Extensions.log("response post ${null}")
                 }
+            } catch (e: Exception) {
+                Extensions.log("response post ${null}")
             }
         }
     }
 
-    private fun saveKeyboardState(focused: Boolean) {
-        _keyboardState.value = if (focused) KeyboardState.isShown else KeyboardState.isHidden
-    }
-
-    private fun saveSelectPost(post: Post) {
-        _postState.value = SelectPostState.Success(post)
-    }
-
     private fun requestPosts() {
-
-        _listState.value = PostListState.Loading
-
-        service.requestPosts().enqueue(object : Callback<ArrayList<Post>?> {
-
-            override fun onResponse(call: Call<ArrayList<Post>?>, response: Response<ArrayList<Post>?>) {
+        viewModelScope.launch {
+            _listState.value = PostListState.Loading
+            val response = service.requestPosts()
+            if (response.isSuccessful) {
                 val posts = response.body()!!
                 if (posts.isEmpty()) {
                     _listState.value = PostListState.Empty
                 } else {
                     _listState.value = PostListState.Success(posts)
                 }
+            } else {
+                _listState.value = PostListState.Error(response.message())
             }
-
-            override fun onFailure(call: Call<ArrayList<Post>?>, t: Throwable?) {
-                _listState.value = PostListState.Error(t?.message.toString())
-            }
-        })
+        }
     }
 }

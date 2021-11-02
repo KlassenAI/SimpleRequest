@@ -6,12 +6,15 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.simplerequest.R
 import com.example.simplerequest.databinding.FragmentMviBinding
+import com.example.simplerequest.main.extensions.Extensions
 import com.example.simplerequest.main.extensions.Extensions.Companion.loadImage
 import com.example.simplerequest.main.extensions.Extensions.Companion.log
 import com.example.simplerequest.main.extensions.Extensions.Companion.showKeyboard
@@ -25,15 +28,12 @@ import com.example.simplerequest.mvi.viewstate.KeyboardState
 import com.example.simplerequest.mvi.viewstate.PostListState
 import com.example.simplerequest.mvi.viewstate.SelectPostState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 @ExperimentalCoroutinesApi
 class MviFragment : Fragment(), OnPostClickListener {
-
-    companion object {
-        private val TAG = MviFragment::class.java.simpleName
-    }
 
     private lateinit var binding: FragmentMviBinding
     private lateinit var viewModel: MviViewModel
@@ -53,7 +53,6 @@ class MviFragment : Fragment(), OnPostClickListener {
 
         observeListState()
         observePostState()
-        observeKeyboardState()
 
         binding.apply {
             recycler.layoutManager = LinearLayoutManager(context)
@@ -63,15 +62,32 @@ class MviFragment : Fragment(), OnPostClickListener {
                 (viewModel::onIntent)(LoadPostsClick)
             }
 
+            filterEditText.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    filterEditText.clearFocus()
+                }
+                false
+            }
+
             filterEditText.addTextChangedListener(object : TextWatcher {
 
+                private var searchFor = ""
+
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    filterPosts(s.toString())
+                    val searchText = s.toString()
+                    if (searchText == searchFor) return
+                    searchFor = searchText
+                    lifecycleScope.launch {
+                        delay(500)
+                        if (searchText != searchFor)
+                            return@launch
+                        filterPosts(s.toString())
+                    }
                 }
 
-                override fun beforeTextChanged(s: CharSequence?, str: Int, cnt: Int, aft: Int) {}
+                override fun beforeTextChanged(s: CharSequence?, str: Int, cnt: Int, aft: Int) = Unit
 
-                override fun afterTextChanged(s: Editable?) {}
+                override fun afterTextChanged(s: Editable?) = Unit
 
             })
         }
@@ -129,18 +145,22 @@ class MviFragment : Fragment(), OnPostClickListener {
         }
     }
 
-    private fun observeKeyboardState() {
-        lifecycleScope.launch {
-            viewModel.keyboardState.collect {
-                when(it) {
-                    KeyboardState.isHidden -> {}
-                    //KeyboardState.isShown -> showKeyboard(binding.filterEditText, requireActivity())
-                }
-            }
-        }
-    }
-
     private fun filterPosts(filter: String) {
         adapter.filter.filter(filter)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val isKeyboardShown = Extensions.isKeyboardShown(activity?.findViewById(R.id.main_activity))
+        viewModel.setIsSearching(isKeyboardShown)
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        showKeyboard(viewModel.isSearching.value)
+    }
+
+    private fun showKeyboard(isSearching: Boolean) {
+        activity?.showKeyboard(binding.filterEditText, isSearching)
     }
 }

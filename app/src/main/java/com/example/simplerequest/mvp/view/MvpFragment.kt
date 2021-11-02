@@ -26,10 +26,9 @@ import kotlinx.coroutines.launch
 
 class MvpFragment : MvpAppCompatFragment(), PostView, OnPostClickListener {
 
-    private lateinit var binding: FragmentMvpBinding
-
     @InjectPresenter
     lateinit var presenter: PostPresenter
+    private lateinit var binding: FragmentMvpBinding
     private var adapter = PostItemAdapter(arrayListOf(), this)
 
     override fun onCreateView(
@@ -91,8 +90,8 @@ class MvpFragment : MvpAppCompatFragment(), PostView, OnPostClickListener {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        val isShown = isKeyboardShown(activity?.findViewById(R.id.main_activity))
-        presenter.isSearching = isShown
+        val isKeyboardShown = isKeyboardShown(activity?.findViewById(R.id.main_activity))
+        presenter.isSearching = isKeyboardShown
     }
 
     override fun showPosts(posts: ArrayList<Post>) {

@@ -6,6 +6,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -17,7 +18,6 @@ import com.example.simplerequest.main.extensions.Extensions
 import com.example.simplerequest.main.extensions.Extensions.Companion.loadImage
 import com.example.simplerequest.main.extensions.Extensions.Companion.log
 import com.example.simplerequest.main.extensions.Extensions.Companion.showKeyboard
-import com.example.simplerequest.main.extensions.Extensions.Companion.toast
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.view.OnPostClickListener
 import com.example.simplerequest.main.view.PostItemAdapter
@@ -42,6 +42,8 @@ class MvvmFragment : Fragment(), OnPostClickListener {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(requireActivity()).get(PostViewModel::class.java)
 
+        observeViewModel()
+
         binding.apply {
             recycler.layoutManager = LinearLayoutManager(context)
             recycler.adapter = adapter
@@ -50,6 +52,40 @@ class MvvmFragment : Fragment(), OnPostClickListener {
                 progressCircular.isVisible = true
                 viewModel.requestPosts()
             }
+
+            filterEditText.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    filterEditText.clearFocus()
+                }
+                false
+            }
+
+            filterEditText.addTextChangedListener(object : TextWatcher {
+
+                private var searchFor = ""
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    val searchText = s.toString()
+                    if (searchText == searchFor) return
+                    searchFor = searchText
+                    lifecycleScope.launch {
+                        delay(500)
+                        if (searchText != searchFor)
+                            return@launch
+                        viewModel.setFilter(s.toString())
+                    }
+                }
+
+                override fun beforeTextChanged(s: CharSequence?, str: Int, cnt: Int, aft: Int) = Unit
+
+                override fun afterTextChanged(s: Editable?) = Unit
+
+            })
+        }
+    }
+
+    private fun observeViewModel() {
+        binding.apply {
 
             viewModel.selectedPost.observe(viewLifecycleOwner, {
                 title.text = it?.title
@@ -74,39 +110,18 @@ class MvvmFragment : Fragment(), OnPostClickListener {
                 }
                 progressCircular.isVisible = false
             })
-
-            filterEditText.addTextChangedListener(object : TextWatcher {
-
-                private var searchFor = ""
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    val searchText = s.toString()
-                    if (searchText == searchFor) return
-                    searchFor = searchText
-                    lifecycleScope.launch {
-                        delay(500)
-                        if (searchText != searchFor)
-                            return@launch
-                        viewModel.setFilter(s.toString())
-                    }
-                }
-
-                override fun beforeTextChanged(s: CharSequence?, str: Int, cnt: Int, aft: Int) {}
-
-                override fun afterTextChanged(s: Editable?) {}
-
-            })
         }
     }
 
     override fun onPostClick(post: Post) {
         viewModel.setSelectedPost(post)
+        binding.scrollView.smoothScrollTo(0, 0)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        val isShown = Extensions.isKeyboardShown(activity?.findViewById(R.id.main_activity))
-        viewModel.setIsSearching(isShown)
+        val isKeyboardShown = Extensions.isKeyboardShown(activity?.findViewById(R.id.main_activity))
+        viewModel.setIsSearching(isKeyboardShown)
     }
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {

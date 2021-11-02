@@ -75,6 +75,7 @@ class PostItemAdapter(
             return results
         }
 
+
         override fun publishResults(constraint: CharSequence, results: FilterResults) {
             val resultPosts = results.values as ArrayList<Post>
             val posts = if (resultPosts.isEmpty()) {
