@@ -1,12 +1,9 @@
 package com.example.simplerequest.mvi.view
 
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -14,23 +11,19 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.simplerequest.R
 import com.example.simplerequest.databinding.FragmentMviBinding
-import com.example.simplerequest.main.extensions.Extensions
-import com.example.simplerequest.main.extensions.Extensions.Companion.loadImage
-import com.example.simplerequest.main.extensions.Extensions.Companion.log
-import com.example.simplerequest.main.extensions.Extensions.Companion.showKeyboard
+import com.example.simplerequest.main.extensions.*
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.view.OnPostClickListener
 import com.example.simplerequest.main.view.PostItemAdapter
+import com.example.simplerequest.mvi.intent.PostIntent.*
 import com.example.simplerequest.mvi.viewmodel.MviViewModel
-import com.example.simplerequest.mvi.intent.PostIntent.LoadPostsClick
-import com.example.simplerequest.mvi.intent.PostIntent.SelectPost
-import com.example.simplerequest.mvi.viewstate.KeyboardState
-import com.example.simplerequest.mvi.viewstate.PostListState
-import com.example.simplerequest.mvi.viewstate.SelectPostState
+import com.example.simplerequest.mvi.viewstate.PostsViewState
+import com.example.simplerequest.mvi.viewstate.PostsViewState.Loading
+import com.example.simplerequest.mvi.viewstate.PostsViewState.Success
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.runBlocking
 
 @ExperimentalCoroutinesApi
 class MviFragment : Fragment(), OnPostClickListener {
@@ -51,97 +44,54 @@ class MviFragment : Fragment(), OnPostClickListener {
 
         viewModel = ViewModelProvider(requireActivity()).get(MviViewModel::class.java)
 
-        observeListState()
-        observePostState()
+        observeViewState()
 
         binding.apply {
             recycler.layoutManager = LinearLayoutManager(context)
             recycler.adapter = adapter
 
             button.setOnClickListener {
-                (viewModel::onIntent)(LoadPostsClick)
+                (viewModel::onIntent)(LoadPosts)
             }
 
-            filterEditText.setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    filterEditText.clearFocus()
-                }
-                false
+            filterEditText.setOnDefaultEditorActionListener()
+
+            filterEditText.addTextChangedListenerWithDebounce {
+                filterPosts(it)
             }
-
-            filterEditText.addTextChangedListener(object : TextWatcher {
-
-                private var searchFor = ""
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    val searchText = s.toString()
-                    if (searchText == searchFor) return
-                    searchFor = searchText
-                    lifecycleScope.launch {
-                        delay(500)
-                        if (searchText != searchFor)
-                            return@launch
-                        filterPosts(s.toString())
-                    }
-                }
-
-                override fun beforeTextChanged(s: CharSequence?, str: Int, cnt: Int, aft: Int) = Unit
-
-                override fun afterTextChanged(s: Editable?) = Unit
-
-            })
         }
     }
 
     override fun onPostClick(post: Post) {
         (viewModel::onIntent)(SelectPost(post))
+        binding.scrollView.smoothScrollTo(0, 0)
     }
 
-    private fun observeListState() {
-        lifecycleScope.launch {
-            viewModel.listState.collect {
-                when (it) {
-                    PostListState.Start -> {
-                        log("Start")
-                    }
-                    PostListState.Loading -> {
-                        log("Loading")
-                        binding.progressCircular.isVisible = true
-                    }
-                    PostListState.Empty -> {
-                        log("Empty")
-                        binding.progressCircular.isVisible = false
-                        binding.filterEditText.isEnabled = false
-                    }
-                    is PostListState.Error -> {
-                        log("Error")
-                        binding.progressCircular.isVisible = false
-                        binding.filterEditText.isEnabled = false
-                    }
-                    is PostListState.Success -> {
-                        log("Loaded")
-                        adapter.setList(it.posts as ArrayList<Post>)
-                        binding.progressCircular.isVisible = false
-                        binding.filterEditText.isEnabled = true
-                    }
-                }
+    private fun observeViewState() {
+        viewModel.mapOrdersViewState.onEach {
+            editPostsViewState(it.postsViewState)
+            setSelectedPost(it.selectedPost)
+        }.launchWhenStarted(lifecycleScope)
+    }
+
+    private fun editPostsViewState(postsViewState: PostsViewState) {
+        when (postsViewState) {
+            is Success -> {
+                adapter.setList(
+                    postsViewState.posts as ArrayList<Post>,
+                    binding.filterEditText.text.toString()
+                )
             }
+            else -> log(postsViewState.toString())
         }
+        binding.filterEditText.isEnabled = adapter.itemCount > 0 || postsViewState is Success
+        binding.progressCircular.isVisible = postsViewState is Loading && adapter.itemCount == 0
     }
 
-    private fun observePostState() {
-        lifecycleScope.launch {
-            viewModel.postState.collect {
-                when (it) {
-                    SelectPostState.Empty -> {}
-                    is SelectPostState.Success -> {
-                        binding.apply {
-                            title.text = it.post.title
-                            image.loadImage(it.post.id)
-                        }
-                    }
-                }
-            }
+    private fun setSelectedPost(post: Post?) {
+        if (post != null) {
+            binding.title.text = post.title
+            binding.image.loadImage(post.id)
         }
     }
 
@@ -151,13 +101,13 @@ class MviFragment : Fragment(), OnPostClickListener {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        val isKeyboardShown = Extensions.isKeyboardShown(activity?.findViewById(R.id.main_activity))
+        val isKeyboardShown = isKeyboardShown(activity?.findViewById(R.id.main_activity))
         viewModel.setIsSearching(isKeyboardShown)
     }
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
         super.onViewStateRestored(savedInstanceState)
-        showKeyboard(viewModel.isSearching.value)
+        showKeyboard(viewModel.mapOrdersViewState.value.isSearching)
     }
 
     private fun showKeyboard(isSearching: Boolean) {

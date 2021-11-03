@@ -14,7 +14,7 @@ class PostItemAdapter(
     private val listener: OnPostClickListener
 ) : RecyclerView.Adapter<PostItemAdapter.PostViewHolder>(), Filterable {
 
-    private var posts = ArrayList(listPosts)
+    private var filteredPosts = ArrayList(listPosts)
     private var allPosts = ArrayList(listPosts)
     private var filterString = ""
 
@@ -42,19 +42,27 @@ class PostItemAdapter(
     }
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
-        val post: Post = posts[position]
+        val post: Post = filteredPosts[position]
         holder.bind(post)
     }
 
-    override fun getItemCount(): Int = posts.size
+    override fun getItemCount(): Int = filteredPosts.size
 
-    fun setList(posts: ArrayList<Post>) {
-        val diffCallback = PostsDiffCallback(this.posts, posts)
+    fun setFilteredList(posts: ArrayList<Post>) {
+        updatePosts(posts)
+    }
+
+    fun setList(posts: ArrayList<Post>, filter: String) {
+        allPosts.clear()
+        allPosts.addAll(posts)
+        exampleFilter.filter(filter)
+    }
+
+    private fun updatePosts(posts: ArrayList<Post>) {
+        val diffCallback = PostsDiffCallback(filteredPosts, posts)
         val diffResult = DiffUtil.calculateDiff(diffCallback)
-        this.posts.clear()
-        this.posts.addAll(posts)
-        this.allPosts.clear()
-        this.allPosts.addAll(posts)
+        filteredPosts.clear()
+        filteredPosts.addAll(posts)
         diffResult.dispatchUpdatesTo(this)
     }
 
@@ -65,43 +73,42 @@ class PostItemAdapter(
     private val exampleFilter: Filter = object : Filter() {
 
         override fun performFiltering(charSequence: CharSequence): FilterResults {
-
             filterString = charSequence.toString()
-
             val filteredList = getFilterPosts(filterString)
-
             val results = FilterResults()
             results.values = filteredList
             return results
         }
 
-
         override fun publishResults(constraint: CharSequence, results: FilterResults) {
-            val resultPosts = results.values as ArrayList<Post>
-            val posts = if (resultPosts.isEmpty()) {
+            val newFilteredPosts = getNewFilteredPosts(results)
+            updatePosts(newFilteredPosts)
+        }
+
+        private fun getNewFilteredPosts(results: FilterResults?): ArrayList<Post> {
+            return if (results == null) {
                 getFilterPosts(filterString)
             } else {
-                resultPosts
-            }
-            val diffCallback = PostsDiffCallback(this@PostItemAdapter.posts, posts)
-            val diffResult = DiffUtil.calculateDiff(diffCallback)
-            this@PostItemAdapter.posts.clear()
-            this@PostItemAdapter.posts.addAll(posts)
-            diffResult.dispatchUpdatesTo(this@PostItemAdapter)
-        }
-    }
-
-    private fun getFilterPosts(filter: String): ArrayList<Post> {
-        val filteredList = ArrayList<Post>()
-        if (filter.isEmpty()) {
-            filteredList.addAll(allPosts)
-        } else {
-            for (item in allPosts) {
-                if (item.title.contains(filter) || item.body.contains(filter)) {
-                    filteredList.add(item)
+                val resultPosts = results.values as ArrayList<Post>
+                if (resultPosts.isEmpty()) {
+                    getFilterPosts(filterString)
+                } else {
+                    resultPosts
                 }
             }
         }
-        return filteredList
+
+        private fun getFilterPosts(filter: String): ArrayList<Post> {
+            val filteredList = ArrayList<Post>()
+            if (filter.isEmpty()) {
+                filteredList.addAll(allPosts)
+            } else {
+                allPosts.forEach {
+                    if (it.title.contains(filter) || it.body.contains(filter))
+                        filteredList.add(it)
+                }
+            }
+            return filteredList
+        }
     }
 }

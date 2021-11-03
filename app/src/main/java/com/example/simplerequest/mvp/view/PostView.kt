@@ -7,5 +7,5 @@ interface PostView : MvpView {
     fun showPosts(posts: ArrayList<Post>)
     fun showEmptyMessage()
     fun showErrorMessage()
-    fun showSelectedPost(post: Post)
+    fun showSelectedPost(post: Post?)
 }

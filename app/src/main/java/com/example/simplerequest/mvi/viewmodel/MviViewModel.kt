@@ -1,12 +1,11 @@
 package com.example.simplerequest.mvi.viewmodel
 
-import androidx.lifecycle.*
-import com.example.simplerequest.main.extensions.Extensions
-import com.example.simplerequest.main.model.Post
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.simplerequest.main.service.RetrofitClient.service
 import com.example.simplerequest.mvi.intent.PostIntent
-import com.example.simplerequest.mvi.viewstate.PostListState
-import com.example.simplerequest.mvi.viewstate.SelectPostState
+import com.example.simplerequest.mvi.viewstate.MapOrdersViewState
+import com.example.simplerequest.mvi.viewstate.PostsViewState.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
@@ -17,15 +16,11 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 
 @ExperimentalCoroutinesApi
-class MviViewModel: ViewModel() {
+class MviViewModel : ViewModel() {
 
     private val intentChannel = Channel<PostIntent>(Channel.UNLIMITED)
-    private val _listState = MutableStateFlow<PostListState>(PostListState.Start)
-    val listState: StateFlow<PostListState> = _listState
-    private val _postState = MutableStateFlow<SelectPostState>(SelectPostState.Empty)
-    val postState: StateFlow<SelectPostState> = _postState
-    private val _isSearching = MutableStateFlow(false)
-    val isSearching: StateFlow<Boolean> = _isSearching
+    private val _mapOrdersViewState = MutableStateFlow(MapOrdersViewState())
+    val mapOrdersViewState: StateFlow<MapOrdersViewState> = _mapOrdersViewState
 
     init {
         handleIntent()
@@ -34,9 +29,9 @@ class MviViewModel: ViewModel() {
     private fun handleIntent() {
         viewModelScope.launch {
             intentChannel.consumeAsFlow().collect {
-                when(it) {
-                    is PostIntent.SelectPost -> setSelectedPost(it.post)
-                    PostIntent.LoadPostsClick -> requestPosts()
+                when (it) {
+                    is PostIntent.SelectPost -> requestPost(it.post.id)
+                    PostIntent.LoadPosts -> requestPosts()
                 }
             }
         }
@@ -49,44 +44,44 @@ class MviViewModel: ViewModel() {
     }
 
     fun setIsSearching(isSearching: Boolean) {
-        _isSearching.value = isSearching
-    }
-
-    private fun setSelectedPost(post: Post) {
-        _postState.value = SelectPostState.Success(post)
-        requestPost(post.id)
+        updateState {
+            it.copy(isSearching = isSearching)
+        }
     }
 
     private fun requestPost(id: Int) {
         viewModelScope.launch {
             try {
                 val deferredResponse = async { service.requestPostAsync(id) }
-                val response = deferredResponse.await()
-                if (response.isSuccessful) {
-                    Extensions.log("response post ${response.body()}")
-                } else {
-                    Extensions.log("response post ${null}")
+                val post = deferredResponse.await()
+                updateState {
+                    it.copy(selectedPost = post)
                 }
             } catch (e: Exception) {
-                Extensions.log("response post ${null}")
+                updateState {
+                    it.copy(selectedPost = null)
+                }
             }
         }
     }
 
     private fun requestPosts() {
         viewModelScope.launch {
-            _listState.value = PostListState.Loading
-            val response = service.requestPosts()
-            if (response.isSuccessful) {
-                val posts = response.body()!!
-                if (posts.isEmpty()) {
-                    _listState.value = PostListState.Empty
-                } else {
-                    _listState.value = PostListState.Success(posts)
+            try {
+                updateState { it.copy(postsViewState = Loading) }
+                val posts = service.requestPosts()
+                updateState {
+                    it.copy(postsViewState = if (posts.isEmpty()) Empty else Success(posts))
                 }
-            } else {
-                _listState.value = PostListState.Error(response.message())
+            } catch (e: Exception) {
+                updateState {
+                    it.copy(postsViewState = Error(e.message.toString()))
+                }
             }
         }
+    }
+
+    private fun updateState(function: (state: MapOrdersViewState) -> MapOrdersViewState) {
+        _mapOrdersViewState.value = function(_mapOrdersViewState.value)
     }
 }

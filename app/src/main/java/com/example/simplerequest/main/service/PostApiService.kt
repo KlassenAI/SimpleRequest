@@ -9,8 +9,8 @@ import retrofit2.http.Path
 interface PostApiService {
 
     @GET("posts")
-    suspend fun requestPosts(): Response<ArrayList<Post>?>
+    suspend fun requestPosts(): ArrayList<Post>
 
     @GET("posts/{id}")
-    suspend fun requestPostAsync(@Path("id") id: Int): Response<Post>
+    suspend fun requestPostAsync(@Path("id") id: Int): Post
 }
