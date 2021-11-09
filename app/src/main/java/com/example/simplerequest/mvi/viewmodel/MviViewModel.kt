@@ -52,8 +52,7 @@ class MviViewModel : ViewModel() {
     private fun requestPost(id: Int) {
         viewModelScope.launch {
             try {
-                val deferredResponse = async { service.requestPostAsync(id) }
-                val post = deferredResponse.await()
+                val post = service.requestPostAsync(id)
                 updateState {
                     it.copy(selectedPost = post)
                 }

@@ -33,8 +33,7 @@ class PostPresenter: MvpPresenter<PostView>() {
     fun requestPost(id: Int) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val deferredResponse = async { service.requestPostAsync(id) }
-                val post = deferredResponse.await()
+                val post = service.requestPostAsync(id)
                 withContext(Dispatchers.Main) {
                     viewState.showSelectedPost(post)
                 }

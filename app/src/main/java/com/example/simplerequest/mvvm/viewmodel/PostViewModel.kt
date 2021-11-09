@@ -2,10 +2,8 @@ package com.example.simplerequest.mvvm.viewmodel
 
 import androidx.lifecycle.*
 import com.example.simplerequest.main.extensions.filterPosts
-import com.example.simplerequest.main.extensions.log
 import com.example.simplerequest.main.model.Post
 import com.example.simplerequest.main.service.RetrofitClient.service
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 class PostViewModel : ViewModel() {
@@ -49,8 +47,7 @@ class PostViewModel : ViewModel() {
     fun requestPost(id: Int) {
         viewModelScope.launch {
             try {
-                val deferredResponse = async { service.requestPostAsync(id) }
-                val post = deferredResponse.await()
+                val post = service.requestPostAsync(id)
                 _selectedPost.postValue(post)
             } catch (e: Exception) {
                 _selectedPost.postValue(null)
